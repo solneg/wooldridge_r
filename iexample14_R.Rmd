@@ -1,0 +1,53 @@
+# Advanced Panel Data Methods
+
+Also covered using [Python](http://solomonegash.com/econometrics/wooldridge_python/iexample14_py.html) and [Stata](http://www.solomonegash.com/woodridge1/iexample14.html)
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+library(wooldridge)
+library(lmtest)
+library(stargazer)
+library(car)
+library(plm)
+rm(list = ls())
+```
+
+## Example 14.1. Effect of Job Training on Firm Scrap Rates
+
+```{r}
+
+jtrainP <- pdata.frame(jtrain, index = c("fcode", "year"))
+head(attr(jtrainP, "index"))
+jtrainP_fe1 <- plm(lscrap ~ d88 + d89 + grant + grant_1, data = jtrainP, model = "within")
+stargazer(jtrainP_fe1, no.space=TRUE, type="text")
+
+(exp(jtrainP_fe1$coef[4])-1)
+
+jtrainP_fe2 <- plm(lscrap ~ d88 + d89 + grant, data = jtrainP, model = "within")
+stargazer(jtrainP_fe2,  no.space=TRUE, type="text")
+```
+
+## Example 14.2.Has the Return to Education Changed over Time?
+```{r}
+wagepanP <- pdata.frame(wagepan, index = c("nr", "year"))
+wagepanP_fe1 <- plm(lwage ~ educ*year + union + married, data=wagepanP, model = "within")
+stargazer(wagepanP_fe1, single.row = TRUE, no.space=TRUE, type="text")
+```
+
+## Example 14.3.Effect of Job Training on Firm Scrap Rates
+```{r}
+jtrainP <- pdata.frame(jtrain, index = c("fcode", "year"))
+jtrainP_fe3 <- plm(lscrap ~ d88 + d89 + grant + grant_1 + lsales + lemploy, data = jtrainP, model = "within")
+summary(jtrainP_fe3)
+
+```
+## Example 14.4. A Wage Equation Using Panel Data
+```{r}
+wagepanP <- pdata.frame(wagepan, index = c("nr", "year"))
+POLS <- lm(lwage ~ educ + black + hisp + exper + expersq + married + union + factor(year), data=wagepanP)
+RE <- plm(lwage ~ educ + black + hisp + exper + expersq + married + union + factor(year), data=wagepanP, model = "random")
+FE <- plm(lwage ~ educ + black + hisp + exper + expersq + married + union + factor(year), data=wagepanP, model = "within")
+
+stargazer(POLS, RE, FE, keep.stat=c("n","rsq", "adj.rsq"), no.space=TRUE, type="text")
+```
+
+

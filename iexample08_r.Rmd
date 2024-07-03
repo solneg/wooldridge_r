@@ -1,0 +1,176 @@
+# Heteroscedasticity
+
+Also covered using [Python](http://solomonegash.com/econometrics/wooldridge_python/iexample8_py.html) and [Stata](http://www.solomonegash.com/woodridge1/iexample8.html)
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+rm(list = ls())
+library(wooldridge)
+library(stargazer)
+library(lmtest)
+library(car)
+options(width=120)
+```
+
+## Example 8.1. Log wage equation with Heteroskedasticity
+
+```{r}
+marrmale <- (wage1$female ==0 & wage1$married == 1)
+marrfem <- (wage1$female ==1 & wage1$married == 1)
+singfem <- (wage1$female ==1 & wage1$married == 0)
+singmale <- (wage1$female ==0 & wage1$married == 0)
+wage1c <- cbind(wage1, marrmale, marrfem, singfem, singmale)
+wage_hetr <- lm(lwage ~ marrmale + marrfem + singfem + educ  + exper + expersq + tenure + tenursq + 1, data=wage1c)
+yhat <- predict(wage_hetr)
+residuals <- resid(wage_hetr)
+plot(yhat, residuals, xlab="fitted values", ylab="residuals")
+```
+
+```{r}
+wage_robust <- coeftest(wage_hetr, vcov = hccm )
+stargazer(wage_hetr, wage_robust, no.space=TRUE, type="text")
+```
+
+## Example 8.2. Heteroskedasticity-Robust F Statistic
+```{r}
+gpa3b <- subset(gpa3, gpa3$spring==1) 
+gpa_hetr <- lm(cumgpa  ~ sat + hsperc + tothrs + female + black + white + 1, data=gpa3b) 
+yhat <- predict(gpa_hetr)
+residuals <- resid(gpa_hetr)
+plot(yhat, residuals, xlab="fitted values", ylab="residuals")
+
+gpa_robust <- coeftest(gpa_hetr, vcov = hccm)
+stargazer(gpa_hetr, gpa_robust, no.space=TRUE, type="text")
+```
+
+## Example 8.3. Heteroskedasticity-Robust LM Statistic
+```{r}
+avgsensq <- (crime1$avgsen)**2
+df <- cbind(crime1, avgsensq)
+crime_hetr <- lm(narr86 ~ pcnv + avgsen + avgsensq + ptime86 + qemp86 + inc86 + black + hispan + 1, data=df)
+yhat <- predict(crime_hetr)
+residuals <- resid(crime_hetr)
+plot(yhat, residuals, xlab="fitted values", ylab="residuals")
+
+crime_robust <- coeftest(crime_hetr, vcov = hccm)
+stargazer(crime_hetr, crime_robust, no.space=TRUE, type="text")
+```
+
+### LM Statistic - not-robust (See Section 5-2)
+```{r}
+
+crime_hetr_r <- lm(narr86 ~ pcnv + ptime86 + qemp86 + inc86 + black + hispan + 1, data=df)
+
+residuals <- resid(crime_hetr_r)
+
+resid_reg <- lm(residuals ~ pcnv + avgsen + avgsensq + ptime86 + qemp86 + inc86 + black + hispan + 1, data=df)
+stargazer(crime_hetr_r, resid_reg, no.space=TRUE, type="text")
+LM <- nobs(resid_reg)*summary(resid_reg)$r.squared
+LM
+```
+
+### LM Statistic - robust
+
+```{r}
+avgsen_reg <- lm(avgsen ~ pcnv + ptime86 + qemp86 + inc86 + black + hispan + 1, data=df)
+resid_avg <- resid(avgsen_reg)*resid(crime_hetr_r)
+avgsensq_reg <- lm(avgsensq ~ pcnv + ptime86 + qemp86 + inc86 + black + hispan + 1, data=df)
+resid_avgsq <- resid(avgsensq_reg)*resid(crime_hetr_r)
+
+one <- (df$avgsen>=0)
+df2 <- cbind(resid_avg, resid_avgsq, as.data.frame(one))
+lm_robust <- lm(one ~ resid_avg + resid_avgsq + 0, data=df2)
+stargazer(lm_robust, no.space=TRUE, type="text")
+LM <- nobs(lm_robust)*summary(lm_robust)$r.squared
+LM
+```
+
+## Example 8.4. Heteroskedasticity in Housing Price Equations
+```{r}
+
+hprice_hetr <- lm(price ~ lotsize + sqrft + bdrms + 1, data=hprice1)
+uhat_sq <- resid(hprice_hetr)**2
+uhat_sq_reg <- lm(uhat_sq ~ lotsize + sqrft + bdrms + 1, data=hprice1)
+stargazer(uhat_sq_reg, no.space=TRUE, type="text")
+
+LM <- nobs(uhat_sq_reg)*summary(uhat_sq_reg)$r.squared
+LM
+```
+
+```{r}
+hprice_hetr_log <- lm(lprice ~ llotsize + lsqrft + bdrms + 1, data=hprice1)
+uhat_sq_log <- resid(hprice_hetr_log)**2
+uhat_sq_reg_log <- lm(uhat_sq_log ~ llotsize + lsqrft + bdrms + 1, data=hprice1)
+stargazer(uhat_sq_reg_log, no.space=TRUE, type="text")
+
+LM <- nobs(uhat_sq_reg_log)*summary(uhat_sq_reg_log)$r.squared
+LM
+```
+
+
+## Example 8.5. Special Form of the White Test
+```{r}
+yhat <- predict(hprice_hetr_log)
+yhat_sq <- yhat**2
+special_reg <- lm(uhat_sq_log ~ yhat + yhat_sq + 1, data=hprice1)
+stargazer(special_reg, no.space=TRUE, type="text")
+LM <- nobs(special_reg)*summary(special_reg)$r.squared
+LM
+```
+
+## Example 8.6. Financial Wealth Equation (& Table 8.2)
+```{r}
+
+k401ksubs <- subset(k401ksubs, k401ksubs$fsize==1)
+age25sq <- (k401ksubs$age - 25)**2
+
+OLS1 <- lm(nettfa ~ inc + 1, data=k401ksubs)
+OLS1R <- coeftest(OLS1, vcov = hccm)
+OLS2 <- lm(nettfa ~ inc + age25sq + male + e401k + 1, data=k401ksubs)
+OLS2R <- coeftest(OLS2, vcov = hccm)
+
+w <- 1/k401ksubs$inc
+WLS1 <- lm(nettfa ~ inc + 1, weights=w, data=k401ksubs)
+WLS2 <- lm(nettfa ~ inc + age25sq + male + e401k+ 1, weights=w, data=k401ksubs)
+WLS3 <- lm(nettfa ~ inc + age25sq + male + e401k+ 1, weights=w, data=k401ksubs) # Table 8.2
+
+stargazer(OLS1R, OLS2R, WLS1, WLS2, WLS3, type="text", column.labels=c("OLS1R", "OLS2R", "WLS1", "WLS2", "WLS3"), keep.stat=c("n","rsq", "adj.rsq"), no.space=TRUE, align = TRUE)
+
+```
+
+## Example 8.7. Demand for Cigarettes
+```{r}
+OLS_smk <- lm(cigs ~ lincome + lcigpric + educ + age + agesq + restaurn + 1, data=smoke)
+stargazer(OLS_smk, no.space=TRUE, single.row = TRUE,  type="text")
+```
+
+```{r}
+luhat_sq <- log(resid(OLS_smk)**2) 
+luhat_sq_reg <- lm(luhat_sq ~ lincome + lcigpric + educ + age + agesq + restaurn + 1, data=smoke)
+luhat_sq_hat <- exp(predict(luhat_sq_reg))
+w = 1/luhat_sq_hat
+GLS_smk <- lm(cigs ~ lincome + lcigpric + educ + age + agesq + restaurn + 1, weights = w, data=smoke)
+
+stargazer(OLS_smk, GLS_smk, column.labels=c("OLS","GLS"), no.space=TRUE, type="text")
+```
+
+## Example 8.8. Labor Force Participation of Married Women
+```{r}
+mroz_hetr <- lm(inlf ~ nwifeinc + educ + exper + expersq + age + kidslt6 + kidsge6 + 1, data=mroz)
+mroz_robust <- coeftest(mroz_hetr, vcov = hccm) 
+stargazer(mroz_hetr, mroz_robust, column.labels=c("Herosced.","Robust"), no.space=TRUE, type="text")
+```
+
+## Example 8.9. Determinants of Personal Computer Ownership
+```{r}
+parcoll <- (gpa1$fathcoll==1 | gpa1$mothcoll==1)
+gpa1 <- cbind(gpa1, parcoll)
+gpa_hetr <- lm(PC ~ hsGPA + ACT + parcoll  + 1, data=gpa1)
+gpa_robust <- coeftest(gpa_hetr, vcov = hccm) 
+
+w <- 1/(predict(gpa_hetr) - (predict(gpa_hetr)**2))
+gpa_gls = lm(PC ~ hsGPA + ACT + parcoll  + 1, weights = w, data=gpa1)
+
+stargazer(gpa_hetr, gpa_robust, gpa_gls, column.labels=c("Herosced.","Robust", "GLS"), no.space=TRUE, type="text")
+```
+

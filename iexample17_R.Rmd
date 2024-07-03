@@ -1,0 +1,66 @@
+# Limited Dependent Variable Models and Sample Selection Corrections
+
+Also covered using [Python](http://solomonegash.com/econometrics/wooldridge_python/iexample17_py.html) and [Stata](http://www.solomonegash.com/woodridge1/iexample17.html)
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+rm(list = ls())
+library(wooldridge)
+library(stargazer)
+library(AER)
+library(mfx)
+library(censReg)
+library(sampleSelection)
+```
+
+## Example 17.1. Married Women's Labor Force Participation
+
+```{r}
+mOLS <- lm(inlf ~ nwifeinc + educ + exper + expersq + age + kidslt6 + kidsge6, data = mroz) 
+mLogit <- glm(inlf ~ nwifeinc + educ + exper + expersq + age + kidslt6 + kidsge6, family=binomial(link="logit"), data = mroz) 
+mProbit <- glm(inlf ~ nwifeinc + educ + exper + expersq + age + kidslt6 + kidsge6, family=binomial(link="probit"), data = mroz) 
+
+stargazer(mOLS, mLogit, mProbit, keep.stat=c("n"), no.space=TRUE, type="text", title = "Table 17.1 LPM, Logit, and Probit Estimates of Labor Force Participation: (inlf)")
+
+meLogit<- logitmfx(inlf ~ nwifeinc + educ + exper + expersq + age + kidslt6 + kidsge6, data = mroz, atmean = FALSE)
+meLogit
+meProbit <- probitmfx(inlf ~ nwifeinc + educ + exper + expersq + age + kidslt6 + kidsge6, data = mroz, atmean = FALSE)
+meProbit
+```
+
+## Example 17.2.  Married Women's Annual Labor Supply
+
+```{r}
+sOLS <- lm(hours ~ nwifeinc + educ + exper + expersq + age + kidslt6 + kidsge6, data = mroz) 
+sTobit <- censReg(hours ~ nwifeinc + educ + exper + expersq + age + kidslt6 + kidsge6, data = mroz) 
+stargazer(sOLS, sTobit, title="Table 17.3 OLS and Tobit Estimation of Annual Hours Worked: (hours)", no.space=TRUE, type="text")
+
+summary(margEff(sTobit))
+
+```
+
+## Example 17.3.  Poisson Regression for Number of Arrests
+
+```{r}
+pOLS <- lm(narr86 ~ pcnv + avgsen + tottime + ptime86 + qemp86 + inc86 + black + hispan + born60, data=crime1)
+pPoisson <- glm(narr86 ~ pcnv + avgsen + tottime + ptime86 + qemp86 + inc86 + black + hispan +born60, family=poisson, data=crime1)
+
+stargazer(pOLS, pPoisson, title="Table 17.5 Determinants of Number of Arrests for Young Men: (narr86)",  no.space=TRUE, type="text")
+```
+
+## Example 17.4.  Duration of Recidivism
+
+```{r}
+scnreg <- survreg(Surv(ldurat, cens, type = "right") ~ workprg + priors + tserved + felon + alcohol + drugs + black + married + educ + age, data = recid, dist = "gaussian")
+summary(scnreg)
+```
+
+## Example 17.5. Wage Offer Equation for Married Women
+
+```{r}
+ols <- lm(lwage ~ educ + exper + expersq, data=mroz)
+selection <-selection(inlf ~ educ + exper + expersq + nwifeinc + age + kidslt6 + kidsge6, lwage ~ educ + exper + expersq, data=mroz, method="2step")
+
+stargazer(ols, selection, title = "Table 17.7 Wage Offer Equation for Married Women: (lwage)", no.space=TRUE, type="text")
+
+summary(selection)
+```

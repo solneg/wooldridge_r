@@ -1,0 +1,56 @@
+# Simultaneous Equations Models
+
+Also covered using [Python](http://solomonegash.com/econometrics/wooldridge_python/iexample16_py.html) and [Stata](http://www.solomonegash.com/woodridge1/iexample16.html)
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+library(wooldridge)
+library(stargazer)
+library(AER)
+library(Hmisc)
+rm(list = ls())
+```
+
+## Example 16.5. Labor Supply of Married, Working Women
+
+```{r}
+lreg1 <- ivreg(hours ~ lwage + educ + age + kidslt6 + nwifeinc | educ + age + kidslt6 + nwifeinc + exper + expersq, data = mroz) 
+lreg2 <- ivreg(lwage ~ hours  + educ + + exper + expersq | educ + age + kidslt6 + nwifeinc + exper + expersq, data = mroz) 
+
+stargazer(lreg1, lreg2, keep.stat=c("n"), no.space=TRUE, type="text")
+```
+ 
+## Example 16.6. Inflation and Openness
+
+```{r}
+oreg1 <- lm(open ~ lpcinc + lland, data = openness)
+oreg2 <- ivreg(inf ~ open + lpcinc | lland + lpcinc, data = openness)
+stargazer(oreg1, oreg2, keep.stat=c("n", "rsq", "adj.rsq"), no.space=TRUE, type="text")
+
+```
+
+## *Example 16.7. Testing the Permanent Income Hypothesis
+
+```{r}
+preg1 <- ivreg(gc ~ gy + r3 | gy_1 + gc_1 + r3_1, data = consump)
+u <- resid(preg1)
+u1 <- Lag(u, 1)
+preg2 <- lm(u ~ u1)
+consump2<- subset(consump, !is.na(gy_1))
+consump2 <- cbind(consump2, u)
+preg3 <- ivreg(gc ~ gy + r3 + u1 | gy_1 + gc_1 + r3_1 + u1, data = consump2)
+
+stargazer(preg1, preg2, preg3, keep.stat=c("n", "rsq", "adj.rsq"), no.space=TRUE, type="text")
+
+```
+
+## Example 16.8. Effect of Prison Population on Violent Crime Rates
+
+```{r}
+prreg1 <- ivreg(gcriv ~ gpris + gpolpc + gincpc + cunem + cblack + cmetro + cag0_14 + cag15_17 + cag18_24 + cag25_34 | gpolpc + gincpc + cunem + cblack + cmetro + cag0_14 + cag15_17 + cag18_24 + cag25_34 +  final1 + final2, data=prison)
+
+prreg2 <- lm(gcriv ~ gpris + gpolpc + gincpc + cunem + cblack + cmetro + cag0_14 + cag15_17 + cag18_24 + cag25_34, data=prison)
+
+stargazer(prreg1, prreg2, keep.stat=c("n", "rsq", "adj.rsq"), no.space=TRUE, type="text")
+```
+
+

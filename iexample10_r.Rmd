@@ -1,0 +1,102 @@
+# Basic Regression Analysis with Time Series Data
+
+Also covered using [Python](http://solomonegash.com/econometrics/wooldridge_python/iexample10_py.html) and [Stata](http://www.solomonegash.com/woodridge1/iexample10.html)
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+rm(list = ls())
+library(wooldridge)
+library(lmtest)
+library(stargazer)
+library(car)
+```
+
+## Example 10.1. Static Phillips Curve
+
+```{r}
+stPhillips <- lm(inf ~ unem, data =phillips)
+stargazer(stPhillips, no.space=TRUE, type="text")
+```
+
+## Example 10.2.  Effects of Inflation and Deficits on Interest Rates
+
+```{r}
+summary(lm(i3 ~ inf + def + 1, data=intdef))
+```
+
+## Example 10.3. Puerto Rican Employment and the Minimum Wage
+
+```{r}
+summary(lm(lprepop ~ lmincov + lusgnp, data=prminwge))
+```
+
+## Example 10.4. Effects of Personal Exemption on Fertility Rates
+
+```{r}
+regf <- lm(gfr ~ pe + ww2 + pill, data=fertil3)
+tsregf <-lm(gfr ~ pe + pe_1 + pe_2 + ww2 + pill, data=fertil3)
+stargazer(regf, tsregf, no.space=TRUE, type="text")
+
+linearHypothesis(tsregf, c("pe=0", "pe_1=0", "pe_2=0"))
+```
+
+## Example 10.5. Antidumping Filings and Chemical Imports
+
+```{r}
+tsregc <- lm(lchnimp ~lchempi + lgas + lrtwex + befile6 + affile6 + afdec6, data=barium)
+stargazer(tsregc, no.space=TRUE, type="text")
+
+100*(exp(tsregc$coef[7]) -1)
+```
+
+## Example 10.6. Election Outcomes and Economic Performance
+
+```{r}
+summary(lm(demvote ~ partyWH + incum + partyWH:gnews + partyWH:inf +1, data=subset(fair, fair$year<1996)))
+```
+
+## Example 10.7. Housing Investment and Prices
+
+```{r}
+reghi <- lm(linvpc ~ lprice, data=hseinv)
+reghit <- lm(linvpc ~ lprice + t, data=hseinv)
+stargazer(reghi, reghit, no.space=TRUE, type="text")
+```
+
+## Example 10.8. Fertility Equation
+
+```{r}
+regt <- lm(gfr ~ pe + ww2 + pill + t + 1, data=fertil3)
+regtsq <- lm(gfr ~ pe + ww2 + pill + t + tsq, data=fertil3)
+stargazer(regt, regtsq, no.space=TRUE, type="text")
+```
+
+## Example 10.9. Puerto Rican Employment
+
+```{r}
+summary(lm(lprepop ~ lmincov + lusgnp + t, data=prminwge))
+```
+
+## Example 10.10. Housing Investment
+
+```{r}
+summary(lm(linvpc ~ lprice + t, data=hseinv))
+uhat<-resid(lm(linvpc~t, data=hseinv))
+detrend <- lm(uhat ~ lprice + t, data=hseinv)
+trend <- lm(linvpc ~ lprice + t, data=hseinv)
+stargazer(detrend, trend, column.labels=c("Detrend", "Trend"),  no.space=TRUE, type="text")
+```
+
+## Example 10.11. Effects of Antidumping Filings
+
+```{r}
+antid_month <- lm(lchnimp ~ lchempi + lgas + lrtwex + befile6 + affile6 + afdec6 + feb + mar + apr + may + jun + jul + aug + sep + oct + nov + dec + 1, data=barium)
+stargazer(antid_month, single.row = TRUE, no.space=TRUE, type="text")
+linearHypothesis(antid_month, c("feb=0", "mar=0", "apr=0", "may=0", "jun=0", "jul=0", "aug=0", "sep=0", "oct=0", "nov=0", "dec=0"))
+```
+
+```{r}
+antid_season <- lm(lchnimp ~ lchempi + lgas + lrtwex + befile6 + affile6 + afdec6 + spr + sum + fall + 1, data=barium)
+stargazer(antid_season, single.row = TRUE, no.space=TRUE, type="text")
+linearHypothesis(antid_season, c("spr=0", "sum=0", "fall=0"))
+```

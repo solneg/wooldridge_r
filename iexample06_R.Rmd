@@ -1,0 +1,158 @@
+# Multiple Regression Analysis: Further Analysis
+
+Also covered using [Python](http://solomonegash.com/econometrics/wooldridge_python/iexample6_py.html) and [Stata](http://www.solomonegash.com/woodridge1/iexample6.html)
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+rm(list = ls())
+library(wooldridge)
+library(psych)
+library(stargazer)
+library(car)
+```
+
+## Table 6.1 Determinants of College GPA
+```{r}
+bwght_ols1 = lm(bwght  ~ cigs  + faminc + 1, data=bwght)
+bwght_ols2 = lm(bwghtlbs  ~  cigs   + faminc + 1, data=bwght)
+bwght_ols3 = lm( bwght ~ packs + faminc + 1, data=bwght)
+stargazer(bwght_ols1, bwght_ols2, bwght_ols3,  type="text", align=TRUE)
+
+```
+
+## Example 6.1. Effects of pollution on housing prices
+
+```{r echo=FALSE}
+zprice <- scale(hprice2$price)
+znox <- scale(hprice2$nox)
+zcrime <- scale(hprice2$crime)
+zdist <- scale(hprice2$dist)
+zrooms <- scale(hprice2$rooms)
+zstratio <- scale(hprice2$stratio)
+hprice2std <- data.frame(cbind(zprice,znox,zcrime,zrooms,zdist,zstratio))
+```
+
+```{r}
+hprice_scores= lm(zprice ~ znox + zcrime + zrooms + zdist + zstratio + 1, data=hprice2std)
+stargazer(hprice_scores,  type="text", align=TRUE)
+```
+
+## Compare with the result in Example 4.5
+
+```{r}
+ldist <- log(hprice2$dist)
+hprice_mols <- lm(lprice ~ lnox + ldist + rooms + stratio + 1, data=hprice2)
+stargazer(hprice_mols,  type="text", align=TRUE)
+```
+
+## Equation (6.7)
+```{r}
+hprice_scores3 <- lm(lprice ~ lnox + rooms + 1, data=hprice2)
+stargazer(hprice_scores3, type="text", align=TRUE)
+```
+
+## Equation (6.12)
+```{r}
+wage_ols <- lm(wage ~ exper + expersq + 1, data=wage1)
+stargazer(wage_ols,  type="text", align=TRUE)
+```
+
+## Example 6.2. Effects of pollution on housing prices
+
+```{r}
+ldist <- log(hprice2$dist)
+roomsq <- (hprice2$rooms)**2
+hprice2b <- cbind(hprice2, ldist, roomsq)
+hprice_roomsq <- lm(lprice ~ lnox + ldist + rooms + roomsq + stratio + 1, data = hprice2b)
+stargazer(hprice_roomsq,  type="text", align=TRUE)
+```
+
+## Example 6.3. Effects of attendance on final exam performance
+```{r}
+priGPAsq <- (attend$priGPA)**2
+ACTsq <- (attend$ACT)**2
+priGPA_atndrte <- (attend$priGPA)*(attend$atndrte)
+attend <- cbind(attend, priGPAsq, ACTsq, priGPA_atndrte)
+attned_mols = lm(stndfnl ~ atndrte + priGPA + ACT + priGPAsq + ACTsq 
+                      + priGPA_atndrte + 1, data=attend)
+stargazer(attned_mols,  type="text", align=TRUE)
+```
+
+## Example 6.4. CEO compensation and frim perfromance
+```{r}
+salary_lin = lm(salary ~ sales + roe + 1, data=ceosal1)
+salary_log = lm(lsalary ~ lsales + roe + 1, data=ceosal1)
+stargazer(salary_lin, salary_log,  type="text", align=TRUE)
+```
+
+
+## Example 6.5. Confidence interval for predicted college GPA
+```{r}
+hsizesq <- gpa2$hsize**2
+gpa2 <- cbind(gpa2, hsizesq)
+gpa_lin = lm(colgpa ~ sat + hsperc + hsize + hsizesq + 1, data=gpa2)
+stargazer(gpa_lin, type="text", align=TRUE)
+```
+
+Prediction
+```{r}
+sat0 <- (gpa2$sat - 1200)
+hsize0 <- (gpa2$hsize - 5)
+hsperc0 <- (gpa2$hsperc - 30)
+hsize0sq <- (hsize0)**2
+colgpa <- (gpa2$colgpa)
+df <- data.frame(cbind(colgpa, sat0, hsperc0, hsize0, hsize0sq))
+gpa_predict <- lm(colgpa ~ sat0 + hsperc0 + hsize0 + hsize0sq, data=df)
+stargazer(gpa_predict, type="text", align=TRUE)
+```
+
+## Example 6.6. Confidence Interval for Future Collage GPA
+```{r}
+gpa_lin <- lm(colgpa ~ sat + hsperc + hsize + hsizesq + 1, data=gpa2)
+stargazer(gpa_lin, type="text", align=TRUE)
+```
+
+```{r}
+values <- data.frame(sat=c(1200), hsperc=c(30), hsize=c(5), hsizesq=c(25))
+predict(gpa_lin, values, interval = "prediction")
+```
+
+## Example 6.7. Predicting CEO log(salary)
+Step 1
+```{r}
+ceo_step1 = lm(lsalary ~ lsales + lmktval + ceoten + 1, data=ceosal2)
+stargazer(ceo_step1, type="text", align=TRUE)
+```
+
+Step 2
+```{r}
+euhat<- exp(resid(ceo_step1))
+mean(euhat)
+
+mhat <- exp(predict(ceo_step1))
+ceo_step2 <- lm(salary ~ mhat + 0, data=ceosal2)
+stargazer(ceo_step2, type="text", align=TRUE)
+```
+
+Step 3
+```{r}
+ceo_step3 <- lm(lsalary ~ lsales + lmktval + ceoten + 1, data=ceosal2)
+ceo_step3_pred <- ceo_step3$coef[1] + ceo_step3$coef[2]*log(5000) + ceo_step3$coef[3]*log(10000) + ceo_step3$coef[4]*10
+ceo_step3_pred
+```
+
+Step 4
+```{r}
+salary<-ceosal2$salary
+ceo_step4 <- lm(salary ~ mhat + 0)
+ceo_step4_pred <- ceo_step4$coef[1]*exp(7.013)
+ceo_step4_pred
+```
+
+## Example 6.8. Predicting CEO salary 
+```{r}
+cor(mhat, salary)
+salary_reg <- lm(salary ~ sales + mktval + ceoten, data=ceosal2)
+stargazer(salary_reg, type="text", align=TRUE)
+
+```

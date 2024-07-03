@@ -1,0 +1,21 @@
+---
+title: "Introductory Econometrics Using R"
+Sub-title: "Replications using Introductory textbook by Jeffery Wooldridge, 6ed."
+author: "Solomon Negash"
+date: "March 25, 2021"
+output:
+  bookdown::gitbook:
+    config:
+      toc:
+        collapse: section
+site: bookdown::bookdown_site
+
+---
+
+# Welcome
+
+Welcome to this interactive web-based R-book, specially crafted to recreate econometric examples featured in
+
+Welcome to this interactive web-based R-book, designed to guide users through the process of replicating examples from Wooldridge's renowned textbook, "Introductory Econometrics: A Modern Approach. 6ed." This resource aims to enhance your understanding of econometric concepts and techniques by providing codes using the R programming language.
+
+I hope the R-book serves as a valuable companion to Wooldridge's textbook, making econometrics more accessible and enjoyable through the power of R. Happy learning!

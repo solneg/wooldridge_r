@@ -1,0 +1,168 @@
+# Advanced Time Series Topics
+
+Also covered using [Python](http://solomonegash.com/econometrics/wooldridge_python/iexample18_py.html) and [Stata](http://www.solomonegash.com/woodridge1/iexample18.html)
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+rm(list = ls())
+library(wooldridge)
+library(stargazer)
+library(AER)
+library(dynlm)
+```
+
+## Example 18.1. Housing Investment and Residential Price Inflation
+```{r}
+tshseinv <- ts(hseinv)
+reg1 <- dynlm(linvpc ~ t, data = tshseinv)
+stargazer(reg1, no.space=TRUE, type="text")
+
+u <- resid(reg1)
+RationalDL <- dynlm( u ~ gprice + L(u, 1) +  L(gprice, 1), data = tshseinv)
+GeometricDL <- dynlm( u ~ gprice + L(u, 1), data = tshseinv)
+
+stargazer(GeometricDL, RationalDL, title="Table 18.1 Distributed Lag Models for Housing Investment: log(invpc)", column.labels=c("GeometricDL", "RationalDL"), no.space=TRUE, type="text")
+```
+
+
+## Example 18.2. Unit Root Test for Three-Month T-Bill Rates
+```{r}
+tsintqrt <- ts(intqrt)
+uroot1 <- dynlm(cr3 ~ L(r3, 1), data = tsintqrt)
+rho <- 1 + uroot1$coef[2]
+rho
+
+uroot2 <- dynlm(r3 ~ L(r3, 1), data = tsintqrt)
+stargazer(uroot1, uroot2, no.space=TRUE, type="text")
+```
+
+## Example 18.3. Unit Root Test for Annual U.S. Inflation
+
+```{r}
+tsphillips <- ts(subset(phillips, phillips$year<1997))
+
+uroot3 <- dynlm(cinf ~ inf_1 + L(cinf, 1) , data = tsphillips)
+rho1 <- 1 + uroot3$coef[2]
+rho1
+reg2 <- dynlm(cinf ~ L(inf,1), data = tsphillips)
+rho2 <- 1 + reg2$coef[2]
+rho2
+
+stargazer(uroot3, reg2, no.space=TRUE, type="text")
+```
+
+## Example 18.4. Unit Root in the Log of U.S. Real Gross Domestic Product
+
+```{r}
+tsinven <- ts(inven)
+gdp_reg <- dynlm(ggdp ~ trend(tsinven) + L(log(gdp), 1) + L(ggdp, 1), data = tsinven)
+rho_g1 <- 1 + gdp_reg$coef[3]
+rho_g1
+gdp_reg2 <- dynlm(ggdp ~ L(log(gdp), 1) + L(ggdp, 1), data = tsinven)
+rho_g2 <- 1 + gdp_reg2$coef[2]
+rho_g2
+stargazer(gdp_reg, gdp_reg2, no.space=TRUE, type="text")
+```
+
+## Example 18.5. Cointegration between Fertility and Personal Exemption
+```{r}
+tsfertil3 <- ts(fertil3)
+freg1 <- dynlm(gfr ~ t + pe, data=tsfertil3 )
+summary(freg1)
+uf <- resid(freg1)
+
+freg2 <- dynlm(cgfr ~ cpe, data=tsfertil3 ) # Regression in levels
+summary(freg2)
+```
+
+### Regression in levels with a single lag & time trend, manually
+```{r}
+cu <- uf - lag(uf, -1)
+freg3 <- dynlm(cu ~ L(u, 1) + L(cu, 1) + t, data=tsfertil3)
+summary(freg3)
+```
+
+### First difference regression, with two lags (equation 11.27)
+```{r}
+freg4 <- dynlm(cgfr ~ cpe + L(cpe, 1) +  L(cpe, 2), data = tsfertil3)
+summary(freg4)
+```
+
+## Example 18.6. Cointegrating Parameter for Interest Rates
+```{r}
+tsintqrt <- ts(intqrt)
+coreg1 <- dynlm(r6 ~ r3 + cr3 + L(cr3, 1) + L(cr3, 2) + L(cr3, -1) + L(cr3, -2), data = tsintqrt)
+summary(coreg1)
+
+#Test serial correlation
+uc <- resid(coreg1)
+coreg2 <- dynlm(r6 ~ r3 + cr3 + L(cr3, 1) + L(cr3, 2) + L(cr3, -1) + L(cr3, -2) + L(uc, 1), data = tsintqrt)
+summary(coreg2)
+summary(dynlm(uc ~ L(uc, 1)))
+# Compare with Simple OLS
+summary(lm(r6 ~ r3, data = intqrt))
+```
+
+## Example 18.7. Error Correction Model for Holding Yields
+```{r}
+tsintqrt <- ts(intqrt)
+erreg <- dynlm(chy6 ~ L(chy3, 1) + L(hy6hy3_1, 1), data = tsintqrt)
+stargazer(erreg, no.space=TRUE, type="text")
+```
+
+## Example 18.8. Forecasting the U.S. Unemployment Rate
+```{r}
+tsphillips <- ts(phillips)
+reg1 <- lm(unem ~ unem_1, data = tsphillips)
+forreg1 <- dynlm(unem ~ unem_1 + inf_1, data = tsphillips)
+
+forcast97 <- forreg1$coef[1] + forreg1$coef[2]*5.4 + forreg1$coef[3]*3 
+forcast97 # Forcast of unemp for 1997
+
+unem_1f <- phillips$unem_1 -  5.4
+inf_1f <- phillips$inf_1 -  3
+phillips2 <- (cbind (phillips, unem_1f, inf_1f))
+reg2 <- lm(unem ~ unem_1f + inf_1f, data = phillips2)
+reg2
+
+stargazer(reg1, forreg1, reg2, keep.stat=c("n","rsq", "adj.rsq"), no.space=TRUE, type="text")
+```
+
+## Example 18.9. Out-of-Sample Comparisons of Unemployment Forecasts
+```{r}
+phillips2 <- subset(phillips, phillips$year<1997)
+oreg <- lm(unem ~ unem_1, data = phillips2)
+RMSE <- function(error) { sqrt(mean(error^2))}
+MSE <- function(error) { mean(abs(error))}
+RMSE(oreg$residuals)
+MSE(oreg$residuals)
+summary(abs(resid(oreg)))
+
+oreg2 <- lm(unem ~ unem_1 + inf_1, data = phillips2)
+RMSE(oreg2$residuals)
+MSE(oreg2$residuals)
+summary(abs(resid(oreg2)))
+
+stargazer(oreg, oreg2, keep.stat=c("n","rsq", "adj.rsq"), no.space=TRUE, type="text")
+```
+
+## Example 18.10. Two-Year-Ahead Forecast for the Unemployment Rate
+```{r}
+phillips2 <- subset(phillips, phillips$year<1997)
+ifreg <- lm(inf ~ inf_1 , data = phillips2)
+ifreg2 <- lm(inf ~ inf_1 + unem_1, data = phillips2)
+
+stargazer(ifreg, ifreg2, keep.stat=c("n","rsq", "adj.rsq"), no.space=TRUE, type="text")
+
+
+inf96 <- subset(phillips2$inf,phillips2$year==1996)
+inf97 <- ifreg$coef[1] + ifreg$coef[2]*inf96
+mean(inf97)
+
+oreg2 <- lm(unem ~ unem_1 + inf_1, data = phillips2)
+unem96 <- subset(phillips2$unem,phillips2$year==1996)
+unem97 <- oreg2$coef[1] + oreg2$coef[2]*unem96 + oreg2$coef[3]*inf96
+unem98 <- (oreg2$coef[1] + oreg2$coef[2]*unem97 + oreg2$coef[3]*inf97)
+mean(unem98)
+```
+
+

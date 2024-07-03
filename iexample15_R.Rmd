@@ -1,0 +1,123 @@
+# Instrumental Variables Estimation and 2SLS
+
+Also covered using [Python](http://solomonegash.com/econometrics/wooldridge_python/iexample15_py.html) and [Stata](http://www.solomonegash.com/woodridge1/iexample15.html)
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+rm(list = ls())
+library(wooldridge)
+library(stargazer)
+library(AER)
+library(plm)
+```
+
+## Example 15.1. Estimating the Return to Education for Married Women
+
+```{r}
+ereg1 <- lm(lwage ~ educ, data=mroz)
+ereg2 <- lm(educ ~ fatheduc, data =mroz)
+ereg3 <- ivreg(lwage ~ educ | fatheduc, data = mroz) 
+stargazer(ereg1, ereg2, ereg3, keep.stat=c("n","rsq", "adj.rsq"), no.space=TRUE, type="text")
+```
+
+## Example 15.2. Estimating the Return to Education for Men
+```{r}
+wreg1 <- lm(educ ~ sibs, data=wage2)
+wreg2 <- ivreg(lwage ~ educ | sibs, data=wage2) 
+wreg3 <- lm(lwage ~educ, data = wage2)
+stargazer(wreg1, wreg2, wreg3, keep.stat=c("n","rsq", "adj.rsq"), no.space=TRUE, type="text")
+```
+
+## Example 15.3. Estimating the Effect of Smoking on Birth Weight
+```{r}
+sreg1 <- lm(packs ~ cigprice, data = bwght)
+sreg2 <- ivreg(lbwght ~ packs | cigprice , data = bwght)
+stargazer(sreg1, sreg2, keep.stat=c("n","rsq", "adj.rsq"), no.space=TRUE, type="text")
+```
+
+## Example 15.4. Using College Proximity as an IV for Education
+
+```{r}
+creg1 <- lm(educ ~ nearc4 + exper + expersq + black + smsa + south + smsa66 + reg661 + reg662 + reg663 + reg664 + reg665 + reg666 + reg667 + reg668 + reg669, data=card )
+
+creg2 <- lm(lwage  ~ educ + exper + expersq + black + smsa + south + smsa66 + reg661 + reg662 + reg663 + reg664 + reg665 + reg666 + reg667 + reg668 + reg669, data=card )
+
+creg3 <- ivreg (lwage ~ educ + exper + expersq + black + smsa + south + smsa66 + reg661 + reg662 + reg663 + reg664 + reg665 + reg666 + reg667 + reg668 + reg669 |  nearc4 + exper + expersq + black + smsa + south + smsa66 + reg661 + reg662 + reg663 + reg664 + reg665 + reg666 + reg667 + reg668 + reg669, data=card)
+
+stargazer(creg1, creg2, creg3, keep.stat=c("n","rsq", "adj.rsq"), no.space=TRUE, type="text")
+```
+
+## Example 15.5. Return to Education for Working Women
+
+```{r}
+mreg1 <- lm(educ ~ exper + expersq + fatheduc + motheduc, data=mroz)
+mreg2 <- ivreg(lwage ~ educ + exper + expersq | exper + expersq + fatheduc + motheduc, data=mroz)
+mreg3 <- lm( lwage ~ educ + exper + expersq, data=mroz)
+
+linearHypothesis(mreg1, c("fatheduc=0", "motheduc=0"))
+stargazer(mreg1, mreg2, mreg3, keep.stat=c("n","rsq", "adj.rsq"), no.space=TRUE, type="text")
+```
+
+## Example 15.6. Using Two Test Scores as Indicators of Ability
+```{r}
+ireg1 <- ivreg(lwage ~ educ + exper + tenure + married + south + urban + black + IQ | educ + exper + tenure + married + south + urban + black + KWW, data = wage2)
+summary(ireg1)
+```
+
+## Example 15.7. Return to Education for Working Women
+ 
+```{r}
+vreg1 <- lm(educ ~ exper + expersq + fatheduc + motheduc, data=subset(mroz, mroz$inlf==1))
+v2 <- resid(vreg1)
+vreg2 <- ivreg(lwage ~ educ + exper + expersq + v2 | exper + expersq + fatheduc + motheduc + v2, data=subset(mroz, mroz$inlf==1))
+vreg3 <- lm( lwage ~ educ + exper + expersq, data=subset(mroz, mroz$inlf==1))
+
+stargazer(vreg1, vreg2, vreg3, keep.stat=c("n","rsq", "adj.rsq"), no.space=TRUE, type="text")
+```
+
+## Example 15.8. Return to Education for Working Women
+
+. u mroz, clear
+. qui ivreg lwage (educ=fatheduc motheduc) exper* 
+. predict u1, res
+```{r}
+mroz2<- subset(mroz, !is.na(wage))
+wreg1 <- ivreg(lwage ~ educ + exper + expersq | exper + expersq + fatheduc + motheduc, data=mroz2)
+u1 <- resid(wreg1)
+wreg2 <- lm(u1 ~ exper + expersq + fatheduc + motheduc, data=mroz2)
+
+summary(wreg2)$r.squared * nobs(wreg2) # LM = N*Rsq
+
+wreg3 <- ivreg(lwage ~ educ + exper + expersq | exper + expersq + fatheduc + motheduc + huseduc, data=mroz2)
+u1_h <- resid(wreg3)
+wreg4 <- lm(u1_h ~ exper + expersq + fatheduc + motheduc + huseduc, data=mroz2)
+summary(wreg4)$r.squared * nobs(wreg4) # LM = N*Rsq
+
+stargazer(wreg1, wreg2, wreg3, wreg4, keep.stat=c("n","rsq", "adj.rsq"), no.space=TRUE, type="text")
+```
+
+## Example 15.9. Effect of Education on Fertility
+
+```{r}
+ivregk <- ivreg(kids ~ educ + age + agesq + black + east + northcen + west + farm + othrural + town + smcity + y74 + y76 + y78 + y80 + y82 + y84 | age + agesq + black + east + northcen + west + farm + othrural + town + smcity + y74 + y76 + y78 + y80 + y82 + y84 + meduc + feduc, data=fertil1)
+
+regk <- lm(kids ~ educ + age + agesq + black + east + northcen + west + farm + othrural + town + smcity + y74 + y76 + y78 + y80 + y82 + y84, data=fertil1)
+
+#Endogeneity
+regk2 <- lm(educ ~ meduc + feduc, data=fertil1)
+v2 <- resid(regk2)
+
+ivregk2 <- ivreg(kids ~ educ + age + agesq + black + east + northcen + west + farm + othrural + town + smcity + y74 + y76 + y78 + y80 + y82 + y84 + v2| age + agesq + black + east + northcen + west + farm + othrural + town + smcity + y74 + y76 + y78 + y80 + y82 + y84 + v2 + meduc + feduc, data=fertil1)
+
+stargazer(ivregk, regk, regk2, ivregk2, keep.stat=c("n","rsq", "adj.rsq"), no.space=TRUE, type="text")
+```
+
+## Example 15.10. Job Training and Worker Productivity
+
+```{r}
+jtrain2 <- subset(jtrain, jtrain$year==1988)
+jreg1 <- lm(chrsemp ~ cgrant, data=jtrain2)
+jreg2 <- ivreg(clscrap ~ chrsemp | cgrant, data=jtrain2) 
+jreg3 <- ivreg(clscrap ~ chrsemp, data=jtrain2)
+
+stargazer(jreg1, jreg2, jreg3, keep.stat=c("n","rsq", "adj.rsq"), no.space=TRUE, type="text")
+```

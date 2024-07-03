@@ -1,0 +1,40 @@
+# Multiple Regression Analysis: OLS Asymptotics
+
+Also covered using [Python](http://solomonegash.com/econometrics/wooldridge_python/iexample5_py.html) and [Stata](http://www.solomonegash.com/woodridge1/iexample5.html)
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+rm(list = ls())
+library(wooldridge)
+library(psych)
+library(stargazer)
+library(car)
+```
+
+## Example 5.2 Birth weight equaiton, Standar Errors
+```{r}
+bwght_full <- lm(lbwght  ~ cigs  + lfaminc + 1, data=bwght)
+x <- nobs(bwght_full)/2
+bwght2 <- bwght[1:x, ]
+birth_half <- lm(lbwght  ~ cigs  + lfaminc + 1, data=bwght2)
+
+stargazer(bwght_full, birth_half,  type="text", align=TRUE)
+```
+
+## Example 5.3 Economic model of crime
+```{r}
+crime_ols <- lm(narr86 ~ pcnv + avgsen + tottime + ptime86 + qemp86 + 1, data=crime1)
+crime_ols_r <- lm(narr86 ~ pcnv + ptime86 + qemp86 + 1, data=crime1) 
+stargazer(crime_ols, crime_ols_r, type="text", align=TRUE)
+
+linearHypothesis(crime_ols, c("avgsen = 0", "tottime =0"))
+
+resid <- resid(crime_ols_r)
+resid_ols <- lm(resid ~ pcnv + avgsen + tottime + ptime86 + qemp86 + 1, data=crime1)
+
+summary(resid_ols)
+
+LM <- summary(resid_ols)$r.squared * nobs(resid_ols) # LM = N*Rsq
+LM
+```
+

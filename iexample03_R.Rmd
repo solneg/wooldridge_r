@@ -1,0 +1,58 @@
+# Multiple Regression Analysis
+
+Also covered using [Python](http://solomonegash.com/econometrics/wooldridge_python/iexample3_py.html) and [Stata](http://www.solomonegash.com/woodridge1/iexample3.html)
+
+## Example 3.1 Determinants of College GPA
+Install/load necessary packages
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+rm(list = ls())
+library(wooldridge)
+library(psych)
+library(stargazer)
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+options(width=120)
+describe(gpa1)
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+gpa_mols <- lm(colGPA ~ hsGPA + ACT + 1, data=gpa1)
+gpa_sols <- lm(colGPA ~ ACT + 1, data=gpa1)
+stargazer(gpa_sols, gpa_mols, type="text", align=TRUE)
+```
+
+## Example 3.2. Wage equation
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+wage_mols <- lm(lwage ~ educ + exper + tenure + 1, data=wage1)
+stargazer(wage_mols, type="text", align=TRUE)
+```
+
+## Example 3.3. Participation in 401(k) pension plans
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+pension_mols <- lm(prate ~ mrate + age + 1, data=k401k)
+stargazer(pension_mols, type="text", align=TRUE)
+```
+
+## Example 3.4. Determinants of College GPA, R-squared.
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+gpa_mols = lm(colGPA ~ hsGPA + ACT + 1, data=gpa1)
+stargazer(gpa_mols, type="text", align=TRUE)
+```
+
+## Example 3.5 Arrest records
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+crime_mols = lm(narr86 ~ pcnv + ptime86 + qemp86 + 1, data=crime1)
+crime_mols2 = lm(narr86 ~ avgsen + pcnv + ptime86 + qemp86 + 1, data=crime1)
+stargazer(crime_mols, crime_mols2, type="text", align=TRUE)
+```
+
+## Example 3.6 Wage equation
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+wage_sols = lm(lwage ~ educ + 1, data=wage1)
+stargazer(wage_sols, type="text", align=TRUE)
+``` 
+
+

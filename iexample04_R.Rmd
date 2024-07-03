@@ -1,0 +1,98 @@
+# Multiple Regression Analysis: Inference
+
+Also covered using [Python](http://solomonegash.com/econometrics/wooldridge_python/iexample4_py.html) and [Stata](http://www.solomonegash.com/woodridge1/iexample4.html)
+
+## Example 4.1 Wage equation
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+rm(list = ls())
+library(wooldridge)
+library(psych)
+library(stargazer)
+library(car)
+options(width=120)
+wage_mols <- lm(lwage ~ educ + exper + tenure + 1, data=wage1)
+stargazer(wage_mols, type="text", align=TRUE)
+```
+
+
+## Example 4.2. Student performance
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+math_lin_lin <- lm(math10 ~ totcomp + staff + enroll + 1, data=meap93)
+stargazer(math_lin_lin, type="text", align=TRUE)
+math_lin_log <- lm(math10 ~ ltotcomp + lstaff + lenroll + 1, data=meap93)
+stargazer(math_lin_log, type="text", align=TRUE)
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+stargazer(math_lin_lin, math_lin_log, type="text", align=TRUE)
+```
+
+## Example 4.3. Collage GPA
+```{r}
+gpa_mols <- lm(colGPA ~ hsGPA + ACT + skipped + 1, data=gpa1)
+stargazer(gpa_mols, type="text", align=TRUE)
+```
+
+## Example 4.4. Campus crime & enrollment
+```{r}
+crime_ols <- lm(lcrime ~ lenroll + 1, data=campus)
+stargazer(crime_ols, type="text", align=TRUE)
+```
+
+
+## Example 4.5. Housing prices
+```{r}
+ldist <- log(hprice2$dist)
+hprice_mols <- lm(lprice ~ lnox +ldist + rooms + stratio + 1, data=hprice2)
+stargazer(hprice_mols, type="text", align=TRUE)
+```
+
+
+## Example 4.6. Participation rates in 401k plans
+```{r}
+pension_mols <- lm(prate ~ mrate + age + totemp + 1, data=k401k)
+stargazer(pension_mols, type="text", align=TRUE)
+```
+
+
+## Example 4.7. Job training 
+(Only for the year 1987 and for nonunionized firms)
+```{r}
+jtrain87 <- subset(jtrain, jtrain$year==1987 & jtrain$union==0)
+job_mols <- lm(lscrap ~ hrsemp + lsales + lemploy + 1, data=jtrain87)
+stargazer(job_mols, type="text", align=TRUE)
+
+```
+
+## Example 4.8. RD and Sales
+
+```{r}
+lrd_mols <- lm(lrd ~ lsales + profmarg + 1, data=rdchem)
+stargazer(lrd_mols, type="text", align=TRUE)
+```
+
+## Example 4.9. Parent's education on birth weight
+```{r}
+birth_mols <- lm(bwght ~ cigs + parity + faminc + motheduc + fatheduc + 1, data=bwght)
+birth_ols <- lm(bwght ~ cigs + parity + faminc + 1, data=bwght)
+stargazer(birth_mols, birth_ols, type="text", align=TRUE)
+linearHypothesis(birth_mols, c("motheduc = 0", "fatheduc =0"))
+```
+
+## Exaploring further example 4.5.
+```{r}
+attend_ols_r <- lm(atndrte ~ priGPA + 1, data=attend)
+attend_ols <- lm(atndrte ~ priGPA + ACT + 1, data=attend)
+stargazer(attend_ols_r, attend_ols, type="text", align=TRUE)
+```
+
+## Example 4.10. Salary-pension tradeoff for teachers
+```{r}
+meap_ols1 <- lm(lsalary ~ bensal + 1, data=meap93)
+meap_ols2 <- lm(lsalary ~ bensal + lenroll + lstaff + 1, data=meap93)
+meap_ols3 <- lm(lsalary ~ bensal + lenroll + lstaff + droprate + gradrate + 1, data=meap93)
+stargazer(meap_ols1, meap_ols2, meap_ols3,   type="text", align=TRUE)
+```
+
+

@@ -1,0 +1,190 @@
+# Multiple Regression Analysis
+
+Also covered using [Python](http://solomonegash.com/econometrics/wooldridge_python/iexample7_py.html) and [Stata](http://www.solomonegash.com/woodridge1/iexample7.html)
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+rm(list = ls())
+library(wooldridge)
+library(psych)
+library(stargazer)
+library(car)
+```
+
+## Example 7.1. Multiple Regression Analysis with Qualitative Information
+
+Average wage difference between men and women in the sample
+```{r}
+wage_fem <- lm(wage ~ female + educ + exper + tenure + 1, data=wage1)
+stargazer(wage_fem, type="text", align=TRUE)
+```
+
+Average wage for men in the sample
+```{r}
+wage_fem2 <- lm(wage ~ female + 1, data=wage1)
+stargazer(wage_fem2,type="text", align=TRUE)
+```
+
+Average wage for men and women in the sample
+```{r}
+aggregate(wage1$wage,list(wage1$female), mean )
+```
+
+## Example 7.2. Effect of computer ownership on collage GPA
+
+```{r}
+colGPA_ur <- lm(colGPA ~ PC + hsGPA + ACT + 1, data=gpa1)
+stargazer(colGPA_ur, type="text", align=TRUE)
+linearHypothesis(colGPA_ur, c("hsGPA = 0", "ACT=0"))
+
+colGPA_r <- lm(colGPA ~ PC + 1, data=gpa1)
+stargazer(colGPA_r, type="text", align=TRUE)
+aggregate(gpa1$colGPA,list(gpa1$PC), mean )
+```
+
+## Example 7.3. Effect of Training Grants on hours of training
+```{r}
+jtrain88 <- subset(jtrain, jtrain$year==1988)
+jobb_reg <- lm(hrsemp ~ grant + lsales + lemploy + 1, data=jtrain88)
+stargazer(jobb_reg, type="text", align=TRUE)
+```
+
+
+## Example 7.4. Housing price regression
+```{r}
+hrpice_reg <- lm(lprice ~ llotsize + lsqrft  + bdrms + colonial + 1, data=hprice1)
+stargazer(hrpice_reg, type="text", align=TRUE)
+```
+
+## Example 7.5. Hourly wage equation
+```{r}
+wage_reg <- lm(lwage ~ female + educ  + exper + expersq + tenure + tenursq + 1, data=wage1)
+stargazer(wage_reg, type="text", align=TRUE)
+
+level_fem <- exp(wage_reg$coef[2]) - 1
+level_fem
+```
+
+
+## Example 7.6. Hourly wage equation
+
+```{r}
+marrmale <- (wage1$female==0 & wage1$married==1)
+marrfem <- (wage1$female==1 & wage1$married==1)
+singfem <- (wage1$female==1 & wage1$married==0)
+singmale <- (wage1$female==0 & wage1$married==0)
+
+wage_sf = lm(lwage ~ marrmale + marrfem + singfem + educ  + exper + expersq + tenure + tenursq + 1, data=wage1)
+stargazer(wage_sf, type="text", align=TRUE)
+
+wage_sm = lm(lwage ~ marrmale + marrfem + singmale + educ  + exper + expersq + tenure + tenursq + 1, data=wage1)
+stargazer(wage_sm, type="text", align=TRUE)
+```
+
+## Example 7.7. Effects of physical attractiveness on wage
+```{r}
+beauty0<-subset(beauty, beauty$female==0)
+beauty_reg0 <- lm(lwage ~ belavg + abvavg + educ  + exper + expersq + union + married + black + south + goodhlth + 1, data=beauty0)
+stargazer(beauty_reg0, type="text", align=TRUE)
+```
+
+```{r}
+beauty1<-subset(beauty, beauty$female==1)
+
+beauty_reg1 <- lm(lwage ~ belavg + abvavg + educ  + exper + expersq + union + married + black + south + goodhlth + 1, data=beauty1)
+
+stargazer(beauty_reg1, type="text", align=TRUE)
+```
+
+
+## Example 7.8. Effects of law school rankings on starting salaries
+```{r}
+r61_100 <- (lawsch85$rank>60 & lawsch85$rank<=100)
+lawsch85 <- cbind(lawsch85, r61_100)
+lawsch85_reg = lm(lsalary ~ top10 + r11_25  + r26_40 + r41_60 + r61_100 + LSAT + GPA + llibvol + lcost + 1, data=lawsch85)
+stargazer(lawsch85_reg, type="text", align=TRUE)
+
+linearHypothesis (lawsch85_reg, c("LSAT = 0",  "GPA = 0", "llibvol = 0", "lcost = 0"))
+```
+
+## Example 7.9. Effects of computer usage on wages
+Data not available
+
+## Example 7.10. Log hourly wage equation
+```{r}
+wage_reg <- lm(lwage ~ female*educ  + exper + expersq + tenure + tenursq + 1, data=wage1)
+stargazer(wage_reg, type="text", align=TRUE)
+linearHypothesis (wage_reg, c("female = 0", "female:educ = 0"))
+```
+
+## Example 7.11. Effects of race on baseball player salaries
+
+```{r}
+mlb1<-subset(mlb1, mlb1$percblck!=0)
+mlb1_reg <- lm(lsalary ~ years + gamesyr + bavg + hrunsyr + rbisyr + runsyr + fldperc + allstar + black + hispan + black:percblck + hispan:perchisp  + 1, data=mlb1)
+stargazer(mlb1_reg, type="text", align=TRUE)
+linearHypothesis (mlb1_reg, c("black = 0","hispan = 0","hispan:perchisp = 0", "black:percblck = 0"))
+```
+
+```{r}
+mlb1_reg_r <- lm(lsalary ~ years + gamesyr + bavg + hrunsyr + rbisyr + runsyr + fldperc + allstar + 1, data=mlb1)
+stargazer(mlb1_reg_r, type="text", align=TRUE)
+```
+
+
+## Equation [7.22] (Page 222)
+```{r}
+gpa3 <- subset(gpa3, gpa3$spring==1)
+gpa3_reg <- lm(cumgpa ~ female*sat + hsperc + female:hsperc + tothrs + female:tothrs + 1, data=gpa3)
+stargazer(gpa3_reg, type="text", align=TRUE)
+linearHypothesis (gpa3_reg, c("female:tothrs = 0",  "female:sat = 0", "female:hsperc = 0"))
+```
+
+## Equation [7.25] (Page 224)
+```{r}
+gpa3_reg_r <- lm(cumgpa ~ female + sat + hsperc + tothrs + 1, data=gpa3)
+stargazer(gpa3_reg_r, type="text", align=TRUE)
+```
+
+## Equation [7.29] (Page 225)
+```{r}
+mroz_reg <- lm(inlf ~ nwifeinc + educ + exper + expersq + age + kidslt6 + kidsge6 + 1, data=mroz)
+stargazer(mroz_reg, type="text", align=TRUE)
+```
+
+## Example 7.12. A linear probability model of arrest
+
+```{r}
+arr86 <- (crime1$narr86 > 0)
+crime1 <- cbind(crime1, arr86)
+crime_reg <- lm(arr86 ~ pcnv + avgsen + tottime + ptime86 + qemp86 + 1, data=crime1)
+stargazer(crime_reg, type="text", align=TRUE)
+linearHypothesis (crime_reg, c("avgsen = 0",  "tottime = 0"))
+```
+
+## Equation [7.32] (Page 228)
+```{r}
+crime_reg_2 <- lm(arr86 ~ pcnv + avgsen + tottime + ptime86 + qemp86 + black + hispan + 1, data=crime1)
+stargazer(crime_reg_2, type="text", align=TRUE)
+```
+
+## Equation [7.33] (Page 229)
+```{r}
+jtrain <- subset(jtrain, jtrain$year==1988)
+jobb_reg <- lm(lscrap ~ grant + lsales + lemploy + 1, data=jtrain)
+stargazer(jobb_reg, type="text", align=TRUE)
+```
+
+## Equation [7.35] (Page 231)
+```{r}
+fert_reg <- lm(children ~ age + educ + 1, data=fertil2)
+stargazer(fert_reg, type="text", align=TRUE)
+```
+
+
+## Equation [7.37] (Page 232)
+```{r}
+fert_reg_2 <- lm(children ~ age + educ + electric + 1, data=fertil2)
+stargazer(fert_reg_2, type="text", align=TRUE)
+```
+

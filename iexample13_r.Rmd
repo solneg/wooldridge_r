@@ -1,0 +1,102 @@
+# Pooling Cross Sections across Time: Simple Panel Data Methods
+
+Also covered using [Python](http://solomonegash.com/econometrics/wooldridge_python/iexample13_py.html) and [Stata](http://www.solomonegash.com/woodridge1/iexample13.html)
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+library(wooldridge)
+library(stargazer)
+library(plm)
+library(lmtest)
+library(car)
+rm(list = ls())
+```
+
+## Example 13.1. Women’s Fertility over Time
+
+```{r}
+fert_reg <- lm(kids ~ educ + age + agesq + black + east + northcen + west + farm + othrural + town + smcity + y74 + y76 + y78 + y80 + y82 + y84, data=fertil1)
+u2 <- resid(fert_reg)**2
+u2_reg <- lm(u2 ~ educ + age + agesq + black + east + northcen + west + farm + othrural + town + smcity + y74 + y76 + y78 + y80 + y82 + y84, data=fertil1)
+
+stargazer(fert_reg, u2_reg, no.space=TRUE, type="text")
+
+linearHypothesis(fert_reg, c("y74=0", "y76=0", "y78=0", "y80=0", "y82=0", "y84=0"))
+bptest(u2_reg)
+```
+
+## Example 13.2. Changes in the Return to Education and the Gender Wage Gap
+
+```{r}
+wage_reg <- lm(lwage ~ y85 + educ + y85educ + exper + expersq + union + female + y85fem, data=cps78_85)
+stargazer(wage_reg, no.space=TRUE, type="text")
+wage_reg$coef[3]*100 #Return to Education in 1978 (%)
+(wage_reg$coef[3] + wage_reg$coef[4])*100 #Return to Education in 1985 (%)
+```
+
+## Example 13.3. Effect of a Garbage Incinerator’s Location on Housing Prices
+
+```{r}
+garb81_reg <- lm(rprice ~ nearinc, data=subset(kielmc, kielmc$year==1981))
+garb78_reg <- lm(rprice ~ nearinc, data=subset(kielmc, kielmc$year==1978))
+stargazer(garb81_reg, garb78_reg,  column.labels=c("Garb81", "Garb78"), no.space=TRUE, type="text")
+```
+
+### Table 13.2 Effects of Incinerator Location on Housing Prices (rprice)
+```{r}
+One <- lm(rprice ~ y81 + nearinc + y81nrinc, data=subset(kielmc))
+Two <- lm(rprice ~ y81 + nearinc + y81nrinc + age + agesq, data=subset(kielmc))
+Three <- lm(rprice ~ y81 + nearinc + y81nrinc + age + agesq + intst + land + area + rooms + baths, data=subset(kielmc))
+stargazer(One, Two, Three,  column.labels=c("One", "Two", "Three"), no.space=TRUE, type="text")
+```
+
+```{r}
+lOne <- lm(lprice ~ y81 + nearinc + y81nrinc, data=subset(kielmc))
+lThree <- lm(lprice ~ y81 + nearinc + y81nrinc + age + agesq + lintst + lland + larea + rooms + baths, data=subset(kielmc))
+stargazer(lOne, lThree,  column.labels=c("Oneln", "Threeln"), no.space=TRUE, type="text")
+```
+
+## Example 13.4. Effect of Worker Compensation Laws on Weeks out of Work
+. u injury, clear
+. reg 
+```{r}
+summary(lm(ldurat~ afchnge + highearn + afhigh, data=subset(injury, injury$ky==1)))
+```
+
+## Example 13.5. Sleeping versus Working
+
+```{r}
+summary(lm(cslpnap ~ ctotwrk + ceduc + cmarr + cyngkid + cgdhlth, data=slp75_81))
+```
+
+## Distributed Lag of Crime Rate on Clear-Up Rate
+```{r}
+summary(lm(clcrime ~ cclrprc1 + cclrprc2, data=crime3)) 
+```
+
+## Example 13.7. Effect of Drunk Driving Laws on Traffic Fatalities
+```{r}
+summary(lm(cdthrte ~ copen + cadmn, data=traffic1)) 
+```
+
+## Example 13.8. Effect of Enterprise Zones on Unemployment Claims
+```{r}
+tsezunem <- ts(ezunem)
+ezon_reg <- lm(guclms ~ d82 + d83 + d84 + d85 + d86 + d87 + d88 + cez, data=ezunem) 
+summary(ezon_reg)
+(exp(ezon_reg$coef[9])-1)*100
+bptest(ezon_reg)
+
+```
+
+## *Example 13.9. County Crime Rates in North Carolina 
+
+```{r}
+crime4p <- pdata.frame(crime4, index = c("county", "year"))
+pdim(crime4p)
+crime_hetr <- plm(clcrmrte ~  d83 + d84 + d85 + d86 + d87 + clprbarr + clprbcon + clprbpri + clavgsen + clpolpc + 1, data=crime4)
+stargazer(crime_hetr, single.row = TRUE, no.space=TRUE, type="text")
+
+summary(crime_hetr, robust = TRUE)
+bptest(crime_hetr)
+```
+

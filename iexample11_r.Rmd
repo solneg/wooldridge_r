@@ -1,0 +1,66 @@
+# Further Issues in Using OLS with Time Series Data
+
+Also covered using [Python](http://solomonegash.com/econometrics/wooldridge_python/iexample11_py.html) and [Stata](http://www.solomonegash.com/woodridge1/iexample11.html)
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+rm(list = ls())
+library(wooldridge)
+library(lmtest)
+library(stargazer)
+library(car)
+library(dynlm)
+```
+
+## Example 11.4.  Efficient Markets Hypothesis
+
+```{r}
+mrk_l1 <- lm(return ~ return_1, data =nyse)
+stargazer(mrk_l1, no.space=TRUE, type="text")
+```
+
+## Equation [11.18]
+```{r}
+nyse_tsset <- ts(nyse)
+mrk_lag2 <- dynlm(return ~ return_1 + L(return, 2), data =nyse_tsset)
+stargazer(mrk_lag2, no.space=TRUE, type="text")
+linearHypothesis(mrk_lag2, c("return_1 =0","L(return, 2)=0"))
+```
+
+## Example 11.5.  Expectations Augmented Phillips Curve
+```{r}
+data(phillips, package='wooldridge')
+phillips_old <-subset(phillips, phillips$year<1997)
+phill_new<-lm(cinf ~ unem + 1, data=phillips) #Slightly longer dataset (1948-2003) 
+phill_old<-lm(cinf ~ unem + 1, data=phillips_old) #Dataset as in the textbook (1948-1996)
+stargazer(phill_new, phill_old, column.labels=c("LongerData", "OriginalData"),no.space=TRUE, type="text")
+
+u0 <- phill_old$coef[1]/-phill_old$coef[2]
+u0
+```
+
+## Example 11.6.  Fertility Equation
+```{r}
+fertil3_tsset <- ts(fertil3)
+fert_lag2 <- dynlm(cgfr ~ cpe + L(cpe, 1) + L(cpe, 2), data =fertil3_tsset)
+stargazer(fert_lag2, no.space=TRUE, type="text")
+linearHypothesis(fert_lag2, c("cpe =0","L(cpe, 1)=0"))
+```
+
+## Example 11.7.  Wages and Productivity
+```{r}
+earns_t <- lm(lhrwage ~ loutphr + t, data=earns)
+stargazer(earns_t, no.space=TRUE, type="text")
+wage_g <- lm(ghrwage ~ goutphr, data=earns)
+stargazer(wage_g, no.space=TRUE, type="text")
+```
+
+
+## Example 11.8.  Fertility Equation
+```{r}
+fertil3_tsset <- ts(fertil3)
+fert_lags <- dynlm(cgfr ~ L(cgfr, 1) + cpe + L(cpe, 1) + L(cpe, 2), data =fertil3_tsset)
+stargazer(fert_lags, no.space=TRUE, type="text")
+linearHypothesis(fert_lags, c("cpe =0","L(cpe, 1)=0"))
+```
+

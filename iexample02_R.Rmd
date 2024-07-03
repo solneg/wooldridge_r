@@ -1,0 +1,119 @@
+# The Simple Regression Model
+
+Also covered using [Python](http://solomonegash.com/econometrics/wooldridge_python/iexample2_py.html) and [Stata](http://solomonegash.com/woodridge1/iexample2.html)
+
+## Example 2.3. CEO Salary & Return on Equity
+Install/load necessary packages
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+#install.packages("wooldridge")
+library(wooldridge)
+#install.packages("psych")
+library(psych)
+```
+
+Data description
+```{r}
+options(width=150)
+data(ceosal1)
+describe(ceosal1)
+```
+Simple linear regression (OLS)
+```{r echo=TRUE}
+salary_eq <- lm( salary ~ roe, data=ceosal1 )
+summary(salary_eq)
+```
+
+## Example 2.4. Wage Equation
+Average values
+```{r}
+avg_salary <- mean(wage1$wage) 
+avg_yrs_educ <- mean(wage1$educ)
+cbind(avg_salary, avg_yrs_educ)
+```
+Regression
+```{r }
+wage_eq <- lm( wage ~ educ, data=wage1 )
+summary(wage_eq)
+```
+
+## Example 2.5. Vote share
+
+```{r}
+vote_ols = lm(voteA ~ shareA, data=vote1)
+summary(vote_ols)
+```
+
+## Example 2.6. Table 2.2
+
+```{r}
+salary_ols = lm(salary ~ roe, data=ceosal1)
+salary_hat <- fitted(salary_ols)
+u_hat <- resid(salary_ols)
+salary<-ceosal1$salary
+roe<-ceosal1$roe
+cbind(roe, salary, salary_hat, u_hat)[1:15,]
+```
+
+##  Example 2.7. Wage & education
+
+```{r  echo=TRUE, message=FALSE, warning=FALSE}
+wage_ols <- lm(wage ~ educ, data=wage1)
+#install.packages("stargazer")
+library(stargazer)
+stargazer(wage_ols, type="text", title="Result", align=TRUE)
+```
+
+```{r}
+coefficients <- coef(wage_ols)
+wage_hat <- coefficients[2]*mean(wage1$educ) + coefficients[1]
+wage_hat
+```
+
+##  Example 2.8. CEO Salary - R-squared
+
+```{r}
+salary_ols <- lm(salary ~ 1 + roe, data=ceosal1)
+stargazer(salary_ols, type="text", align=TRUE)
+1-var(resid(salary_ols))/var(ceosal1$salary)  #R-square 
+cor(ceosal1$salary, fitted(salary_ols))^2   #R-square
+```
+
+## Example 2.9 Voting outcome - R-squared
+
+```{r}
+vote_ols <- lm(voteA ~ shareA, data=vote1)
+stargazer(vote_ols, type="text", align=TRUE)
+
+var(fitted(vote_ols))/var(vote1$voteA) #R-square
+```
+
+## Example 2.3. in session 2.4: Units of measurement & functional form
+
+```{r}
+sal1000 <- (ceosal1$salary)*1000
+roe <- ceosal1$roe
+sal1000_ols <- lm(sal1000 ~ roe)
+salary_ols <- lm(salary ~ 1 + roe, data=ceosal1)
+stargazer(salary_ols, sal1000_ols, type="text", title="Results", align=TRUE)
+
+```
+
+## Example 2.10. A log wage equation (log-lin model, semi-elasticity )
+                    
+```{r}
+lwage_reg <- lm(lwage ~ 1 + educ, data=wage1)
+stargazer(lwage_reg, type="text", align=TRUE) 
+```
+## Example 2.11. Ceo Salary & Fim Sales (log-log model, elasticity)
+                    
+```{r}
+lsalary_reg <- lm(lsalary ~ 1 + lsales, data=ceosal1)
+stargazer(lsalary_reg, type="text", align=TRUE) 
+```
+## Example 2.12 Student math performance
+                     
+```{r}
+math_ols = lm(math10 ~ 1 + lnchprg, data=meap93)
+stargazer(math_ols, type="text", align=TRUE)
+```
+

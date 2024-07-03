@@ -1,0 +1,117 @@
+# Serial Correlation and Heteroskedasticity in Time Series Regressions
+
+Also covered using [Python](http://solomonegash.com/econometrics/wooldridge_python/iexample12_py.html) and [Stata](http://www.solomonegash.com/woodridge1/iexample12.html)
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+library(wooldridge)
+library(lmtest)
+library(stargazer)
+library(car)
+library(dynlm)
+library(prais)
+library(sandwich)
+rm(list = ls())
+```
+
+## Example 12.1. Testing for AR(1) Serial Correlation in the Phillips Curve
+```{r}
+ts_phillips <- ts(phillips)
+uhat1 <- resid(dynlm(inf ~ unem + 1, data=ts_phillips))
+phill_inf1 <- dynlm(uhat1 ~ L(uhat1,1))
+
+ts_phillips2 <-ts(subset(phillips, phillips$year<1997))
+uhat2 <- resid(dynlm(inf ~ unem + 1, data=ts_phillips2))
+phill_inf2 <- dynlm(uhat2 ~ L(uhat2, 1))
+
+uhat3<- resid(dynlm(cinf ~ unem + 1, data=ts_phillips2))
+phill_cinf <- dynlm(uhat3 ~ L(uhat3, 1))
+
+stargazer(phill_inf1, phill_inf2, phill_cinf, keep.stat=c("n","rsq", "adj.rsq"), no.space=TRUE, type="text")
+```
+
+
+## Example 12.2. Testing for AR(1) Serial Correlation in the Minimum Wage Equation
+
+```{r}
+tsprminwge <- ts(prminwge)
+minwg_reg <- dynlm(lprepop ~ lmincov + lprgnp + lusgnp + t, data=tsprminwge)
+uhat <- resid(minwg_reg)
+AR1c <- dynlm(uhat ~  lmincov + lprgnp + lusgnp + t + L(uhat, 1) , data=tsprminwge)
+AR1s <- dynlm(uhat ~ L(uhat, 1))
+stargazer(AR1c, AR1s, column.labels=c("AR1c", "AR1s"), no.space=TRUE, type="text")
+```
+
+
+## Example 12.3. Testing for AR(3) Serial Correlation
+```{r}
+tsbarium<-ts(barium)
+barium_reg <- dynlm(lchnimp ~ lchempi + lgas + lrtwex + befile6 + affile6 + afdec6, data=tsbarium)
+u <- resid(barium_reg)
+AR3 <- dynlm(u ~ lchempi + lgas + lrtwex + befile6 + affile6 + afdec6 + L(u, 1) + L(u, 2) + L(u, 3) + 1, data = tsbarium)
+summary(AR3)
+
+linearHypothesis(AR3, c("L(u, 1)=0 ", "L(u, 2)=0" , "L(u, 3)=0"))
+```
+
+## Example 12.4. Prais-Winsten Estimation in the Event Study
+```{r}
+ols <- dynlm(lchnimp ~ lchempi + lgas + lrtwex + befile6 + affile6 + afdec6, data=tsbarium)
+stargazer(ols, column.labels=c("OLS"), no.space=TRUE, single.row = TRUE, type="text")
+
+pw <- prais_winsten(lchnimp ~ lchempi + lgas + lrtwex + befile6 + affile6 + afdec6, data=tsbarium, index = "t")
+summary(pw)
+```
+
+## Example 12.5. Static Phillips Curve
+```{r}
+phillips2 <- ts(subset(phillips, phillips$year<1997))
+ols <- lm(inf ~ unem, data=phillips2)
+stargazer(ols, column.labels=c("OLS"), no.space=TRUE, single.row = TRUE, type="text")
+pw <- prais_winsten(inf ~ unem, data=phillips2, index = "year")
+summary(pw)
+```
+
+## Example 12.6. Differencing the Interest Rate Equation
+```{r}
+tsintdef <- ts(intdef)
+reg1 <- dynlm(i3 ~ inf + def, data=tsintdef)
+u <- resid(reg1)
+AR1u <- dynlm(u ~ L(u, 1), data=tsintdef)
+
+reg2 <-dynlm(ci3 ~ cinf + cdef, data=tsintdef)
+e <- resid(reg2)
+AR1e <- dynlm(e ~ L(e, 1), data=tsintdef)
+
+stargazer(reg1, reg2, AR1u, AR1e, column.labels=c("reg1", "reg2", "AR1u", "AR1e"), no.space=TRUE, keep.stat=c("n","rsq", "adj.rsq"), type="text")
+```
+
+
+## Example 12.7. The Puerto Rican Minimum Wage
+```{r}
+OLS <- lm(lprepop ~ lmincov + lprgnp + lusgnp + t, data=prminwge)
+Newey <- coeftest(OLS, vcov.=NeweyWest(OLS, lag=2, prewhite=FALSE, adjust=TRUE, verbose=TRUE))
+
+stargazer(OLS, Newey, column.labels=c("OLS", "Newey"), no.space=TRUE, keep.stat=c("n","rsq", "adj.rsq"), type="text")
+
+summary(prais_winsten(lprepop ~  lmincov + lprgnp + lusgnp + t , data=tsprminwge, index = "year"))
+```
+
+## Example 12.8. Heteroskedasticity and the Efficient Markets Hypothesis
+
+```{r}
+tsnyse <-ts(nyse)
+u2 <- resid(dynlm(return ~ return_1, data=tsnyse))**2
+summary(dynlm(u2 ~ return_1 + 1, data = tsnyse))
+```
+
+## Example 12.9. ARCH in Stock Returns
+
+```{r}
+tsnyse <-ts(nyse)
+u <- resid(dynlm(return ~ return_1, data=tsnyse))
+u2 <- u*u
+u2_reg <- dynlm(u2 ~ L(u2, 1) + 1, data = tsnyse)
+u_reg <- dynlm(u ~ L(u, 1) + 1)
+stargazer(u2_reg, u_reg,  no.space=TRUE, type="text")
+```
